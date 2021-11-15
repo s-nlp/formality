@@ -5,4 +5,4 @@ formality
 
 - Training multilingual colab link: https://colab.research.google.com/drive/1uOLzDcizyODeptOzp0-FDNdnhPGNhwHD#scrollTo=ieUx7GzkU8ob
 
-- Training Multilingual Universal Sentence Encoder (USE_CNN) colab link: https://colab.research.google.com/drive/1uOLzDcizyODeptOzp0-FDNdnhPGNhwHD#scrollTo=ieUx7GzkU8ob
+- Training Multilingual Universal Sentence Encoder (USE_CNN) colab link: https://colab.research.google.com/drive/1bv5uvBIwHYu7bYzrH4og_VJAzUuET3F7
