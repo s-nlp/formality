@@ -1,8 +1,4 @@
-# formality
-formality
+# Multilingual Formality Classification
 
-- Training collab link: https://colab.research.google.com/drive/1Mv655PNJp0O93aSkfrX2BDnq5SfkLfIr
-
-- Training multilingual colab link: https://colab.research.google.com/drive/1uOLzDcizyODeptOzp0-FDNdnhPGNhwHD#scrollTo=ieUx7GzkU8ob
-
-- Training Multilingual Universal Sentence Encoder (USE_CNN) colab link: https://colab.research.google.com/drive/1bv5uvBIwHYu7bYzrH4og_VJAzUuET3F7
+We provide code for models training and inference procedure for the paper "Detecting Text Formality: A Study of Text Classification Approaches".
+All the models tested in this work are presented in the folder `notebooks`.
