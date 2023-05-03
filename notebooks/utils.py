@@ -1,0 +1,116 @@
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score,confusion_matrix, classification_report
+import sklearn
+import json
+
+from transformers import (DebertaTokenizer,
+                          DebertaForSequenceClassification,
+                          AutoModelForSequenceClassification,  
+                          AutoTokenizer,
+                          Trainer,TrainingArguments)
+import shutil
+import os
+from glob import glob
+import re
+
+import torch
+from torch.utils.data import Dataset, DataLoader
+
+
+def compute_metrics(pred):
+    """
+    Compute metrics for Trainer
+    """
+    labels = pred.label_ids
+    preds = pred.predictions.argmax(-1)
+    #_, _, f1, _ = precision_recall_fscore_support(labels, preds, average='macro')
+    precision, recall, f1, _ = precision_recall_fscore_support(labels, preds, average="macro")
+
+    acc = accuracy_score(labels, preds)
+    return {
+        'accuracy': acc,
+        'f1': f1,
+        #'macro f1': macro_f1,
+        'precision': precision,
+        'recall': recall
+    }
+
+def train_nli(datasets, model_type, epochs=5, warmup_steps=200, weight_decay = 0.01, save_folder = "/trained_models"):
+    """
+    This contains everything that must be done to train our models
+    """
+    
+    model = AutoModelForSequenceClassification.from_pretrained(model_type, num_labels = 2)
+    tokenizer = AutoTokenizer.from_pretrained(model_type)
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+
+    train_dataset, val_dataset, test_dataset = datasets
+    
+    model_type_save = re.sub("/","_",model_type)
+    
+    save_folder = f"./{save_folder}/{model_type_save}_ep{epochs}_wus{warmup_steps}_wd{weight_decay}"
+
+    training_args = TrainingArguments(
+        output_dir=save_folder,          # output directory
+        num_train_epochs=epochs,              # total number of training epochs
+        per_device_train_batch_size=32,  # batch size per device during training
+        per_device_eval_batch_size=64,   # batch size for evaluation
+        warmup_steps=warmup_steps,                # number of warmup steps for learning rate scheduler
+        weight_decay=weight_decay,               # strength of weight decay
+        logging_dir='./logs',            # directory for storing logs
+        logging_steps=500,
+        evaluation_strategy = 'steps',
+        load_best_model_at_end=True,
+        metric_for_best_model="f1",
+        save_total_limit = 3,
+        # learning_rate: float = 5e-05 default lr from docs
+    )
+
+    results = []
+
+    trainer = Trainer(
+        model=model,                         # the instantiated 🤗 Transformers model to be trained
+        args=training_args,                  # training arguments, defined above
+        train_dataset=train_dataset,         # training dataset
+        eval_dataset=val_dataset,             # evaluation dataset
+        compute_metrics=compute_metrics
+    )
+    trainer.place_model_on_device = False
+    trainer.train()
+
+    trainer.save_model(f"{save_folder}/nli_model/")
+    tokenizer.save_pretrained(f"{save_folder}/nli_model/")
+    
+    test_dataloader = DataLoader(
+            test_dataset,
+            batch_size=64,
+            num_workers=4,
+            drop_last=True
+        )
+    
+    list_predited_label = []
+    list_label = []
+    with torch.no_grad():
+        for d in test_dataloader:
+            input_ids = d["input_ids"].to(device) # .reshape(64, 24)
+            attention_mask = d["attention_mask"].to(device)
+
+            outputs = model(input_ids, attention_mask)
+            logits = outputs[0]
+
+            _, prediction = torch.max(logits, dim=1)
+            targets = d["labels"].detach().numpy().tolist()
+            prediction = prediction.cpu().detach().numpy().tolist()
+
+            list_label.extend(targets)
+            list_predited_label.extend(prediction)
+            
+        with open(f"{save_folder}/test_predicts.json", "w") as f:
+            json.dump(list_predited_label, f)
+            
+            
+        result = classification_report(list_label, list_predited_label, digits=3)
+        print(result)
+    
+    
