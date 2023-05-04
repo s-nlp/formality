@@ -7,6 +7,7 @@ from glob import glob
 
 import torch
 from torch.utils.data import Dataset, DataLoader
+import os 
 
 # Gyafc
 
@@ -46,8 +47,13 @@ class Formal_informal(Dataset):
         return len(self.labels)
 
 def load_gyafc(model_name, toy=False):
-    path_formal = 'GYAFC_Corpus/*/{}/formal*'
-    path_inform = 'GYAFC_Corpus/*/{}/informal*'
+    
+    
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+
+    path_formal = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/formal*')
+    path_inform = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/informal*')
     
     data_train_form = data_read(path_formal.format('train'))
     data_train_inform = data_read(path_inform.format('train'))
@@ -71,8 +77,7 @@ def load_gyafc(model_name, toy=False):
     train_texts, train_labels = prep_dataset(data_train_form, data_train_inform)
     val_texts, val_labels = prep_dataset(data_valid_form, data_valid_inform)
     test_texts, test_labels = prep_dataset(data_test_form, data_test_inform)
-    
-        
+            
     train_encodings = tokenizer(train_texts, truncation=True, padding=True, max_length=24)
     val_encodings = tokenizer(val_texts, truncation=True, padding=True, max_length=24)
     test_encodings = tokenizer(test_texts, truncation=True, padding=True, max_length=24)

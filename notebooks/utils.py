@@ -14,7 +14,7 @@ import re
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-
+from transformers import EarlyStoppingCallback
 
 def compute_metrics(pred):
     """
@@ -34,7 +34,7 @@ def compute_metrics(pred):
         'recall': recall
     }
 
-def train_nli(datasets, model_type, epochs=5, warmup_steps=200, weight_decay = 0.01, save_folder = "/trained_models"):
+def train_nli(datasets, model_type, epochs=5, warmup_steps=200, weight_decay = 0.01, lr = 1e-5,save_folder = "/trained_models"):
     """
     This contains everything that must be done to train our models
     """
@@ -49,22 +49,24 @@ def train_nli(datasets, model_type, epochs=5, warmup_steps=200, weight_decay = 0
     
     model_type_save = re.sub("/","_",model_type)
     
-    save_folder = f"./{save_folder}/{model_type_save}_ep{epochs}_wus{warmup_steps}_wd{weight_decay}"
+    save_folder = f"./{save_folder}/{model_type_save}_ep{epochs}_wus{warmup_steps}_lr{lr}"
 
     training_args = TrainingArguments(
         output_dir=save_folder,          # output directory
         num_train_epochs=epochs,              # total number of training epochs
-        per_device_train_batch_size=32,  # batch size per device during training
+        per_device_train_batch_size=64,  # batch size per device during training
         per_device_eval_batch_size=64,   # batch size for evaluation
         warmup_steps=warmup_steps,                # number of warmup steps for learning rate scheduler
         weight_decay=weight_decay,               # strength of weight decay
         logging_dir='./logs',            # directory for storing logs
-        logging_steps=500,
+        logging_steps=1000,
+        eval_steps = 1000,
+        save_steps=1000,
         evaluation_strategy = 'steps',
         load_best_model_at_end=True,
         metric_for_best_model="f1",
-        save_total_limit = 3,
-        # learning_rate: float = 5e-05 default lr from docs
+        save_total_limit = 1,
+        learning_rate = lr #: float = 5e-05 default lr from docs
     )
 
     results = []
@@ -74,13 +76,17 @@ def train_nli(datasets, model_type, epochs=5, warmup_steps=200, weight_decay = 0
         args=training_args,                  # training arguments, defined above
         train_dataset=train_dataset,         # training dataset
         eval_dataset=val_dataset,             # evaluation dataset
-        compute_metrics=compute_metrics
+        compute_metrics=compute_metrics,
+        callbacks = [EarlyStoppingCallback(early_stopping_patience=3)]
     )
     trainer.place_model_on_device = False
     trainer.train()
 
     trainer.save_model(f"{save_folder}/nli_model/")
     tokenizer.save_pretrained(f"{save_folder}/nli_model/")
+    
+    model = AutoModelForSequenceClassification.from_pretrained(f"{save_folder}/nli_model/")
+    model = model.to(device)
     
     test_dataloader = DataLoader(
             test_dataset,

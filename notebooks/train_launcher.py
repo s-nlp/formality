@@ -15,11 +15,14 @@ args = parser.parse_args()
 
 tr_val_test_datasets = load_gyafc(args.model, toy = False)
 
-train_nli(tr_val_test_datasets, 
-          model_type = args.model, 
-          epochs=10, 
-          warmup_steps=200, 
-          weight_decay = 0.01)
+for warmup_steps in [100, 1000, 2000]:
+    for epochs in [5,10]:
+        for lr in [1e-4, 1e-5, 5e-5, 1e-6]:     
+            train_nli(tr_val_test_datasets, 
+                      model_type = args.model, 
+                      epochs=epochs, 
+                      warmup_steps=warmup_steps, 
+                      lr=lr)
 
 
 
