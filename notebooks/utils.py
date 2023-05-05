@@ -54,7 +54,7 @@ def train_nli(datasets, model_type, epochs=5, warmup_steps=200, weight_decay = 0
     training_args = TrainingArguments(
         output_dir=save_folder,          # output directory
         num_train_epochs=epochs,              # total number of training epochs
-        per_device_train_batch_size=64,  # batch size per device during training
+        per_device_train_batch_size=32,  # batch size per device during training
         per_device_eval_batch_size=64,   # batch size for evaluation
         warmup_steps=warmup_steps,                # number of warmup steps for learning rate scheduler
         weight_decay=weight_decay,               # strength of weight decay
@@ -83,40 +83,6 @@ def train_nli(datasets, model_type, epochs=5, warmup_steps=200, weight_decay = 0
     trainer.train()
 
     trainer.save_model(f"{save_folder}/nli_model/")
-    tokenizer.save_pretrained(f"{save_folder}/nli_model/")
-    
-    model = AutoModelForSequenceClassification.from_pretrained(f"{save_folder}/nli_model/")
-    model = model.to(device)
-    
-    test_dataloader = DataLoader(
-            test_dataset,
-            batch_size=64,
-            num_workers=4,
-            drop_last=True
-        )
-    
-    list_predited_label = []
-    list_label = []
-    with torch.no_grad():
-        for d in test_dataloader:
-            input_ids = d["input_ids"].to(device) # .reshape(64, 24)
-            attention_mask = d["attention_mask"].to(device)
-
-            outputs = model(input_ids, attention_mask)
-            logits = outputs[0]
-
-            _, prediction = torch.max(logits, dim=1)
-            targets = d["labels"].detach().numpy().tolist()
-            prediction = prediction.cpu().detach().numpy().tolist()
-
-            list_label.extend(targets)
-            list_predited_label.extend(prediction)
-            
-        with open(f"{save_folder}/test_predicts.json", "w") as f:
-            json.dump(list_predited_label, f)
-            
-            
-        result = classification_report(list_label, list_predited_label, digits=3)
-        print(result)
+    tokenizer.save_pretrained(f"{save_folder}/nli_model/")    
     
     
