@@ -15,6 +15,8 @@ import re
 import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import EarlyStoppingCallback
+import gc
+
 
 def compute_metrics(pred):
     """
@@ -54,20 +56,24 @@ def train_nli(datasets, model_type, epochs=5, warmup_steps=200, weight_decay = 0
     training_args = TrainingArguments(
         output_dir=save_folder,          # output directory
         num_train_epochs=epochs,              # total number of training epochs
-        per_device_train_batch_size=32,  # batch size per device during training
-        per_device_eval_batch_size=64,   # batch size for evaluation
+        per_device_train_batch_size=16,  # batch size per device during training
+        per_device_eval_batch_size=16,   # batch size for evaluation
         warmup_steps=warmup_steps,                # number of warmup steps for learning rate scheduler
         weight_decay=weight_decay,               # strength of weight decay
         logging_dir='./logs',            # directory for storing logs
-        logging_steps=1000,
-        eval_steps = 1000,
-        save_steps=1000,
-        evaluation_strategy = 'steps',
+        # logging_steps=1000,
+        eval_steps = 1,
+        save_steps=1,
+        evaluation_strategy = 'epoch',
         load_best_model_at_end=True,
+        save_strategy="epoch", 
         metric_for_best_model="f1",
-        save_total_limit = 1,
+        greater_is_better = True,
+        save_total_limit = 2,
         learning_rate = lr #: float = 5e-05 default lr from docs
     )
+    
+    # training_args.set_save(strategy="epoch", steps=1)
 
     results = []
 
@@ -77,12 +83,15 @@ def train_nli(datasets, model_type, epochs=5, warmup_steps=200, weight_decay = 0
         train_dataset=train_dataset,         # training dataset
         eval_dataset=val_dataset,             # evaluation dataset
         compute_metrics=compute_metrics,
-        callbacks = [EarlyStoppingCallback(early_stopping_patience=3)]
+        callbacks = [EarlyStoppingCallback(early_stopping_patience=2)]
     )
     trainer.place_model_on_device = False
     trainer.train()
 
     trainer.save_model(f"{save_folder}/nli_model/")
     tokenizer.save_pretrained(f"{save_folder}/nli_model/")    
+    
+    gc.collect()
+    torch.cuda.empty_cache();
     
     
