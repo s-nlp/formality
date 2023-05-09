@@ -46,9 +46,6 @@ def compute_metrics(pred):
     }
 
 
-
-
-
 def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight_decay = 0.01, lr = 1e-5,save_folder = "/trained_models",
              save_eval_steps=500):
     """
@@ -70,6 +67,7 @@ def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight
     model_type_save = re.sub("/","_",model_type)
     
     save_folder = f"./{save_folder}/{model_type_save}_ep{epochs}_wus{warmup_steps}_lr{lr}_batch{batch}"
+    report_name = f"./{model_type_save}_ep{epochs}_wus{warmup_steps}_lr{lr}_batch{batch}"
 
     training_args = TrainingArguments(
         output_dir=save_folder,          # output directory
@@ -88,7 +86,9 @@ def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight
         metric_for_best_model="f1",
         greater_is_better = True,
         save_total_limit = 1,
-        learning_rate = lr #: float = 5e-05 default lr from docs
+        learning_rate = lr, #: float = 5e-05 default lr from docs,
+        report_to = "wandb",
+        run_name=report_name,
     )
     
     # training_args.set_save(strategy="epoch", steps=1)
