@@ -45,9 +45,6 @@ class Formal_informal(Dataset):
 
     def __len__(self):
         return len(self.labels)
-    
-    
-
 
 def load_gyafc(model_name, toy=False):
     
@@ -94,83 +91,3 @@ def load_gyafc(model_name, toy=False):
     # return {"train":{"encodings":train_encodings, "labels":train_labels},
     #        "val":{"encodings":val_encodings, "labels":val_labels},
     #        "test":{"encodings":test_encodings, "labels":test_labels}}
-    
-    
-
-class SentenceDataset(Dataset):
-    def __init__(self, datasets):
-      self.formal = []
-      self.informal = []
-      if isinstance(datasets, list):
-        for dataset in datasets:
-            self.formal += [sentence for sentence in dataset['formal']]
-            self.informal += [sentence for sentence in dataset['informal']]  
-      else:
-        for language in datasets:
-          self.formal += [sentence for sentence in datasets[language]['formal']]
-          self.informal += [sentence for sentence in datasets[language]['informal']]        
-
-      print(f"formal sentences: {len(self.formal)}")
-      print(f"informal sentences: {len(self.informal)}")
-
-      self.tuples = []
-      self.tuples += [(sentence,0) for sentence in self.formal] 
-      self.tuples += [(sentence,1) for sentence in self.informal]
-      shuffle(self.tuples)
-
-    def __len__(self):
-        return len(self.tuples)
-
-    def __getitem__(self, idx):
-        return self.tuples[idx]
-    
-def get_files(path_dataset,):
-    
-    print(path_dataset)
-
-
-    data = {"fr" : {"formal" : [], "informal" : []},
-            "pt" : {"formal" : [], "informal" : []},
-            "en" : {"formal" : [], "informal" : []},
-            "it" : {"formal" : [], "informal" : []},
-            "ru" : {"formal" : [], "informal" : []}
-            }
-
-    for file_name in glob(path_dataset):
-      # print(file_name)
-      with open(file_name, "r") as f:
-        content = f.readlines()
-
-        data[file_name[25:27]][str(get_label(file_name).numpy())[2:-1]] += content
-
-
-    data = {
-            "fr" : {"formal": [sentence for sentence in list(set(data["fr"]["formal"])) if len(sentence) <=150],
-                    "informal": [sentence for sentence in list(set(data["fr"]["informal"])) if len(sentence) <=150]},
-            
-            "pt" : {"formal": [sentence for sentence in list(set(data["pt"]["formal"])) if len(sentence) <=150],
-                    "informal": [sentence for sentence in list(set(data["pt"]["informal"])) if len(sentence) <=150]},
-            
-            "en" : {"formal": [sentence for sentence in list(set(data["en"]["formal"])) if len(sentence) <=150],
-                    "informal": [sentence for sentence in list(set(data["en"]["informal"])) if len(sentence) <=150]},
-            
-            "it" : {"formal": [sentence for sentence in list(set(data["it"]["formal"])) if len(sentence) <=150],
-                    "informal": [sentence for sentence in list(set(data["it"]["informal"])) if len(sentence) <=150]}, 
-            # "ru" : {"formal": [sentence for sentence in list(set(data["ru"]["formal"])) if len(sentence) <=150],
-            #         "informal": [sentence for sentence in list(set(data["ru"]["informal"])) if len(sentence) <=150]}, 
-            }
-            
-
-    return data
-
-def load_xformal(model_name, language, toy=False):
-    
-    
-    train_data  = get_files(data_path.format('train'))
-    validation_data = get_files(data_path.format('test'))
-    test_data = get_files(data_path.format('tune'))
-    
-    if language == "all":
-      train_dataset  = SentenceDataset([train_data[temp] for temp in train_data.keys()])
-      val_dataset  = SentenceDataset([validation_data[temp] for temp in validation_data.keys()])
-      test_dataset  = SentenceDataset([test_data[temp] for temp in test_data.keys()])
