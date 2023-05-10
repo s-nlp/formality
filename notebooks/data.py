@@ -3,7 +3,7 @@ from glob import glob
 import torch
 from torch.utils.data import Dataset, DataLoader
 import os
-import tensorflow as tf
+# import tensorflow as tf
 
 def data_read(data_path):
     data = []
@@ -122,41 +122,48 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False):
     
     return (train_dataset, val_dataset, test_dataset)
 
+# def get_label(file_path):
+#     parts = tf.strings.split(file_path, os.path.sep)
+#     # Note: You'll use indexing here instead of tuple unpacking to enable this
+#     # to work in a TensorFlow graph.
+#     return parts[-2]
+
 def get_label(file_path):
-    parts = tf.strings.split(file_path, os.path.sep)
-    # Note: You'll use indexing here instead of tuple unpacking to enable this
-    # to work in a TensorFlow graph.
-    return parts[-2]
-    
-def get_files(path_dataset,):
-    
-    data = {"fr" : {"formal" : [], "informal" : []},
-            "pt" : {"formal" : [], "informal" : []},
-            "en" : {"formal" : [], "informal" : []},
-            "it" : {"formal" : [], "informal" : []},
-            "ru" : {"formal" : [], "informal" : []}
+    # print("file_path",file_path)
+    parts = file_path.split(os.path.sep)
+    # print("parts",parts)
+    return parts[-1].split(".")[0], parts[-5]
+
+
+def get_files(path_dataset, ):
+    data = {"fr": {"formal": [], "informal": []},
+            "pt": {"formal": [], "informal": []},
+            "en": {"formal": [], "informal": []},
+            "it": {"formal": [], "informal": []},
             }
 
     for file_name in glob(path_dataset):
-      # print(file_name)
-      with open(file_name, "r") as f:
-        content = f.readlines()
+        # print(file_name)
+        with open(file_name, "r") as f:
+            content = f.readlines()
 
-        data[file_name[25:27]][str(get_label(file_name).numpy())[2:-1]] += content
-
+            label, lang = get_label(file_name)
+            #         print(label, lang)
+            if lang != "ru":
+                data[lang][label] += content
 
     data = {
-            "fr" : {"formal": [sentence for sentence in list(set(data["fr"]["formal"])) if len(sentence) <=150],
-                    "informal": [sentence for sentence in list(set(data["fr"]["informal"])) if len(sentence) <=150]},
-            
-            "pt" : {"formal": [sentence for sentence in list(set(data["pt"]["formal"])) if len(sentence) <=150],
-                    "informal": [sentence for sentence in list(set(data["pt"]["informal"])) if len(sentence) <=150]},
-            
-            "en" : {"formal": [sentence for sentence in list(set(data["en"]["formal"])) if len(sentence) <=150],
-                    "informal": [sentence for sentence in list(set(data["en"]["informal"])) if len(sentence) <=150]},
-            
-            "it" : {"formal": [sentence for sentence in list(set(data["it"]["formal"])) if len(sentence) <=150],
-                    "informal": [sentence for sentence in list(set(data["it"]["informal"])) if len(sentence) <=150]},
-            }
+        "fr": {"formal": [sentence for sentence in list(set(data["fr"]["formal"])) if len(sentence) <= 150],
+               "informal": [sentence for sentence in list(set(data["fr"]["informal"])) if len(sentence) <= 150]},
+
+        "pt": {"formal": [sentence for sentence in list(set(data["pt"]["formal"])) if len(sentence) <= 150],
+               "informal": [sentence for sentence in list(set(data["pt"]["informal"])) if len(sentence) <= 150]},
+
+        "en": {"formal": [sentence for sentence in list(set(data["en"]["formal"])) if len(sentence) <= 150],
+               "informal": [sentence for sentence in list(set(data["en"]["informal"])) if len(sentence) <= 150]},
+
+        "it": {"formal": [sentence for sentence in list(set(data["it"]["formal"])) if len(sentence) <= 150],
+               "informal": [sentence for sentence in list(set(data["it"]["informal"])) if len(sentence) <= 150]},
+    }
 
     return data
