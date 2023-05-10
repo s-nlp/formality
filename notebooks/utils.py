@@ -18,6 +18,7 @@ from transformers import EarlyStoppingCallback
 import gc
 
 from mt5_utils import MT5ForSequenceClassification
+import wandb
 
 
 def compute_metrics(pred):
@@ -77,7 +78,7 @@ def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight
         warmup_steps=warmup_steps,                # number of warmup steps for learning rate scheduler
         weight_decay=weight_decay,               # strength of weight decay
         logging_dir='./logs',            # directory for storing logs
-        # logging_steps=1000,
+        logging_steps=int(save_eval_steps*0.2),
         eval_steps = save_eval_steps,
         save_steps=save_eval_steps,
         evaluation_strategy = 'steps',
@@ -110,6 +111,6 @@ def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight
     tokenizer.save_pretrained(f"{save_folder}/nli_model/")    
     
     gc.collect()
-    torch.cuda.empty_cache();
+    torch.cuda.empty_cache()
     
-    
+    wandb.finish()

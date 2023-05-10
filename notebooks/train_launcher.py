@@ -41,15 +41,3 @@ for batch in [args.train_batch]:
                           warmup_steps=warmup_steps, 
                           save_eval_steps = save_eval_steps,
                           lr=lr)
-            
-            
-
-
-
-
-
-
-
-
-
-
