@@ -1,15 +1,9 @@
 from transformers import AutoTokenizer
-from torch.utils.data import Dataset, DataLoader
-
-import shutil
-import os
 from glob import glob
-
 import torch
 from torch.utils.data import Dataset, DataLoader
-import os 
-
-# Gyafc
+import os
+import tensorflow as tf
 
 def data_read(data_path):
     data = []
@@ -46,24 +40,64 @@ class Formal_informal(Dataset):
     def __len__(self):
         return len(self.labels)
 
-def load_gyafc(model_name, toy=False):
+def unroll_to_two_lists(data_dict, languages):
+    formal_list = []
+    informal_list = []
+
+    for lang in languages:
+        formal_list.extend(data_dict[lang]["formal"])
+        informal_list.extend(data_dict[lang]["informal"])
+
+    return formal_list, informal_list
+
+def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False):
     
     
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
-    path_formal = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/formal*')
-    path_inform = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/informal*')
-    
-    data_train_form = data_read(path_formal.format('train'))
-    data_train_inform = data_read(path_inform.format('train'))
+    if dataset_type == "gyafc":
 
-    data_valid_form = data_read(path_formal.format('test'))
-    data_valid_inform = data_read(path_inform.format('test'))
+        path_formal = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/formal*')
+        path_inform = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/informal*')
 
-    data_test_form = data_read(path_formal.format('tune'))
-    data_test_inform = data_read(path_inform.format('tune'))
-    
+        data_train_form = data_read(path_formal.format('train'))
+        data_train_inform = data_read(path_inform.format('train'))
+
+        data_valid_form = data_read(path_formal.format('test'))
+        data_valid_inform = data_read(path_inform.format('test'))
+
+        data_test_form = data_read(path_formal.format('tune'))
+        data_test_inform = data_read(path_inform.format('tune'))
+
+    elif dataset_type == "xformal":
+
+        # data_path =  os.path.join(dir_path,'XFORMAL/gyafc_translated/*/*/{}/*/*')
+        data_path = 'XFORMAL/gyafc_translated/*/*/{}/*/*'
+
+        train_data = get_files(data_path.format('train'))
+        validation_data = get_files(data_path.format('test'))
+        test_data = get_files(data_path.format('tune'))
+
+        if language == "all":
+            data_train_form, data_train_inform = unroll_to_two_lists(train_data, list(train_data.keys()))
+            data_valid_form, data_valid_inform = unroll_to_two_lists(validation_data, list(validation_data.keys()))
+            data_test_form, data_test_inform = unroll_to_two_lists(test_data, list(test_data.keys()))
+
+        elif "only" in language:
+            only_lang = language.split("_")[0]
+            print(f"Will be trained only on {only_lang}")
+            data_train_form, data_train_inform = unroll_to_two_lists(train_data, [only_lang])
+            data_valid_form, data_valid_inform = unroll_to_two_lists(validation_data, [only_lang])
+            data_test_form, data_test_inform = unroll_to_two_lists(test_data, [only_lang])
+
+        elif "all_but" in language:
+            all_but_lang = language.split("_")[-1]
+            print(f"Will be trained on all but {all_but_lang}")
+            data_train_form, data_train_inform = unroll_to_two_lists(train_data, [lang for lang in list(train_data.keys()) if lang!= all_but_lang])
+            data_valid_form, data_valid_inform = unroll_to_two_lists(validation_data, [lang for lang in list(train_data.keys()) if lang!= all_but_lang])
+            data_test_form, data_test_inform = unroll_to_two_lists(test_data, [all_but_lang])
+
     if toy == True:
         data_train_form = data_train_form[:100]
         data_train_inform = data_train_inform[:100]
@@ -88,6 +122,41 @@ def load_gyafc(model_name, toy=False):
     
     return (train_dataset, val_dataset, test_dataset)
 
-    # return {"train":{"encodings":train_encodings, "labels":train_labels},
-    #        "val":{"encodings":val_encodings, "labels":val_labels},
-    #        "test":{"encodings":test_encodings, "labels":test_labels}}
+def get_label(file_path):
+    parts = tf.strings.split(file_path, os.path.sep)
+    # Note: You'll use indexing here instead of tuple unpacking to enable this
+    # to work in a TensorFlow graph.
+    return parts[-2]
+    
+def get_files(path_dataset,):
+    
+    data = {"fr" : {"formal" : [], "informal" : []},
+            "pt" : {"formal" : [], "informal" : []},
+            "en" : {"formal" : [], "informal" : []},
+            "it" : {"formal" : [], "informal" : []},
+            "ru" : {"formal" : [], "informal" : []}
+            }
+
+    for file_name in glob(path_dataset):
+      # print(file_name)
+      with open(file_name, "r") as f:
+        content = f.readlines()
+
+        data[file_name[25:27]][str(get_label(file_name).numpy())[2:-1]] += content
+
+
+    data = {
+            "fr" : {"formal": [sentence for sentence in list(set(data["fr"]["formal"])) if len(sentence) <=150],
+                    "informal": [sentence for sentence in list(set(data["fr"]["informal"])) if len(sentence) <=150]},
+            
+            "pt" : {"formal": [sentence for sentence in list(set(data["pt"]["formal"])) if len(sentence) <=150],
+                    "informal": [sentence for sentence in list(set(data["pt"]["informal"])) if len(sentence) <=150]},
+            
+            "en" : {"formal": [sentence for sentence in list(set(data["en"]["formal"])) if len(sentence) <=150],
+                    "informal": [sentence for sentence in list(set(data["en"]["informal"])) if len(sentence) <=150]},
+            
+            "it" : {"formal": [sentence for sentence in list(set(data["it"]["formal"])) if len(sentence) <=150],
+                    "informal": [sentence for sentence in list(set(data["it"]["informal"])) if len(sentence) <=150]},
+            }
+
+    return data
