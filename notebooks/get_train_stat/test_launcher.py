@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../")
+
 from data import load_gyafc
 from torch.utils.data import Dataset, DataLoader
 import torch
@@ -22,15 +25,18 @@ def get_model_type(model_name):
         return "facebook/mbart-large-50"
     elif "distilbert" in model_name:
         return "distilbert-base-multilingual-cased"
-
+    elif "bert-base-multilingual-cased" in model_name:
+        return "bert-base-multilingual-cased"
+    elif "bigscience_bloom-1b1" in model_name:
+        return "bigscience/bloom-1b1"
     else:
         raise Exception ("Unhandled model type!!")
 
 test_dataset_dict = {}
 
-trained_models_fld = "./trained_models/"
+trained_models_fld = "../trained_models/"
 
-existing_inference_results = os.listdir("test_results/")
+existing_inference_results = os.listdir("test_results_trainer/")
 
 for model_folder in os.listdir(trained_models_fld) :
     
@@ -53,7 +59,7 @@ for model_folder in os.listdir(trained_models_fld) :
             test_model = AutoModelForSequenceClassification.from_pretrained(f"{model_folder_abs}/nli_model/")
             print("Model loaded")
         else:
-            print("Not trained! SKpping ...")
+            print("Not trained! Skipping ...")
             continue
         
         training_args = TrainingArguments(per_device_eval_batch_size=64, output_dir = "./tmp_trainer/", dataloader_drop_last = True)
@@ -68,10 +74,9 @@ for model_folder in os.listdir(trained_models_fld) :
 
         print(trainer_preds[:10])
 
-        
         list_predited_label = torch.max(torch.tensor(trainer_preds), dim=1).indices.tolist()    
         
-        with open(f"test_results/{model_folder}.json", "w") as f:
+        with open(f"test_results_trainer/{model_folder}.json", "w") as f:
                 json.dump(list_predited_label, f)
     else:
         print("dropped", model_folder)

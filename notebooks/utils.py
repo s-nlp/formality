@@ -45,26 +45,25 @@ def compute_metrics(pred):
     }
 
 def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight_decay = 0.01, lr = 1e-5,save_folder = "/trained_models",
-             save_eval_steps=500):
+             save_eval_steps=500, language = "en_only"):
     """
     This contains everything that must be done to train our models
     """
-    
+    print("model_type",model_type)
     model = AutoModelForSequenceClassification.from_pretrained(model_type, num_labels = 2)
     tokenizer = AutoTokenizer.from_pretrained(model_type)
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #model = model.to(device)
 
     train_dataset, val_dataset, test_dataset = datasets
     
     model_type_save = re.sub("/","_",model_type)
     
     gpus = torch.cuda.device_count()
-    batch_report = batch * gpus
 
-    save_folder = f"./{save_folder}/{model_type_save}_ep{epochs}_wus{warmup_steps}_lr{lr}_batchpergpu{batch_report}_gpu{gpus}"
-    report_name = f"./{model_type_save}_ep{epochs}_wus{warmup_steps}_lr{lr}_batchpergpu{batch_report}_gpu{gpus}"
+    save_folder = f"./{save_folder}/{model_type_save}_ep{epochs}_wus{warmup_steps}_lr{lr}_batchpergpu{batch}_gpu{gpus}_lang{language}"
+    report_name = f"./{model_type_save}_ep{epochs}_wus{warmup_steps}_lr{lr}_batchpergpu{batch}_gpu{gpus}_lang{language}"
 
 
     training_args = TrainingArguments(
@@ -101,7 +100,7 @@ def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight
         compute_metrics=compute_metrics,
         callbacks = [EarlyStoppingCallback(early_stopping_patience=3)]
     )
-    trainer.place_model_on_device = False
+    #trainer.place_model_on_device = False
     trainer.train()
 
     trainer.save_model(f"{save_folder}/nli_model/")

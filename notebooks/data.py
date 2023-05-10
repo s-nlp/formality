@@ -89,7 +89,14 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False):
             print(f"Will be trained only on {only_lang}")
             data_train_form, data_train_inform = unroll_to_two_lists(train_data, [only_lang])
             data_valid_form, data_valid_inform = unroll_to_two_lists(validation_data, [only_lang])
-            data_test_form, data_test_inform = unroll_to_two_lists(test_data, [only_lang])
+
+            if only_lang == "en":
+                path_formal = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/formal*')
+                path_inform = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/informal*')
+                data_test_form = data_read(path_formal.format('tune'))
+                data_test_inform = data_read(path_inform.format('tune'))
+            else:
+                data_test_form, data_test_inform = unroll_to_two_lists(test_data, [only_lang])
 
         elif "all_but" in language:
             all_but_lang = language.split("_")[-1]
