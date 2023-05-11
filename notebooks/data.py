@@ -82,7 +82,17 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
         if language == "all":
             data_train_form, data_train_inform = unroll_to_two_lists(train_data, list(train_data.keys()))
             data_valid_form, data_valid_inform = unroll_to_two_lists(validation_data, list(validation_data.keys()))
-            data_test_form, data_test_inform = unroll_to_two_lists(test_data, list(test_data.keys()))
+
+            data_test_form, data_test_inform = unroll_to_two_lists(test_data, [lang for lang in list(train_data.keys()) if lang!= "en"])
+
+            path_formal = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/formal*')
+            path_inform = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/informal*')
+            data_test_form_gyafc = data_read(path_formal.format('tune'))
+            data_test_inform_gyafc = data_read(path_inform.format('tune'))
+
+            data_test_form.extend(data_test_form_gyafc)
+            data_test_inform.extend(data_test_inform_gyafc)
+
 
         elif "only" in language:
             only_lang = language.split("_")[0]
@@ -103,6 +113,7 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
             print(f"Will be trained on all but {all_but_lang}")
             data_train_form, data_train_inform = unroll_to_two_lists(train_data, [lang for lang in list(train_data.keys()) if lang!= all_but_lang])
             data_valid_form, data_valid_inform = unroll_to_two_lists(validation_data, [lang for lang in list(train_data.keys()) if lang!= all_but_lang])
+
             data_test_form, data_test_inform = unroll_to_two_lists(test_data, [all_but_lang])
 
     if toy == True:
@@ -120,9 +131,9 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
         print(test_texts[:10])
         test_encodings = tokenizer(test_texts, truncation=True, padding=True, max_length=24)
         test_dataset = Formal_informal(test_encodings, test_labels)
-        return test_dataset
+        return test_dataset, test_labels
     else:
-    
+
         train_texts, train_labels = prep_dataset(data_train_form, data_train_inform)
         val_texts, val_labels = prep_dataset(data_valid_form, data_valid_inform)
         test_texts, test_labels = prep_dataset(data_test_form, data_test_inform)
@@ -167,18 +178,21 @@ def get_files(path_dataset, ):
             if lang != "ru":
                 data[lang][label] += content
 
+    maxlen = 150
+    # maxlen = 100000
+
     data = {
-        "fr": {"formal": [sentence for sentence in list(set(data["fr"]["formal"])) if len(sentence) <= 150],
-               "informal": [sentence for sentence in list(set(data["fr"]["informal"])) if len(sentence) <= 150]},
+        "fr": {"formal": [sentence for sentence in list(set(data["fr"]["formal"])) if len(sentence) <= maxlen],
+               "informal": [sentence for sentence in list(set(data["fr"]["informal"])) if len(sentence) <= maxlen]},
 
-        "pt": {"formal": [sentence for sentence in list(set(data["pt"]["formal"])) if len(sentence) <= 150],
-               "informal": [sentence for sentence in list(set(data["pt"]["informal"])) if len(sentence) <= 150]},
+        "pt": {"formal": [sentence for sentence in list(set(data["pt"]["formal"])) if len(sentence) <= maxlen],
+               "informal": [sentence for sentence in list(set(data["pt"]["informal"])) if len(sentence) <= maxlen]},
 
-        "en": {"formal": [sentence for sentence in list(set(data["en"]["formal"])) if len(sentence) <= 150],
-               "informal": [sentence for sentence in list(set(data["en"]["informal"])) if len(sentence) <= 150]},
+        "en": {"formal": [sentence for sentence in list(set(data["en"]["formal"])) if len(sentence) <= maxlen],
+               "informal": [sentence for sentence in list(set(data["en"]["informal"])) if len(sentence) <= maxlen]},
 
-        "it": {"formal": [sentence for sentence in list(set(data["it"]["formal"])) if len(sentence) <= 150],
-               "informal": [sentence for sentence in list(set(data["it"]["informal"])) if len(sentence) <= 150]},
+        "it": {"formal": [sentence for sentence in list(set(data["it"]["formal"])) if len(sentence) <= maxlen],
+               "informal": [sentence for sentence in list(set(data["it"]["informal"])) if len(sentence) <= maxlen]},
     }
 
     return data
