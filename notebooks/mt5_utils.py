@@ -149,9 +149,9 @@ class MT5ForSequenceClassification(MT5PreTrainedModel):
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
-        if not return_dict:
-            output = (logits,) + outputs[2:]
-            return ((loss,) + output) if loss is not None else output
+        #if not return_dict:
+        #    output = (logits,) + outputs[:]
+        #    return ((loss,) + output) if loss is not None else output
 
         return SequenceClassifierOutput(
             loss=loss,

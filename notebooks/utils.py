@@ -32,6 +32,7 @@ def compute_metrics(pred):
         print(preds[:10])
         preds = preds.argmax(-1)
 
+
     #_, _, f1, _ = precision_recall_fscore_support(labels, preds, average='macro')
     precision, recall, f1, _ = precision_recall_fscore_support(labels, preds, average="macro")
 
@@ -56,7 +57,7 @@ def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight
         model = MT5ForSequenceClassification.from_pretrained(model_type, num_labels = 2)
     else:
         model = AutoModelForSequenceClassification.from_pretrained(model_type, num_labels = 2)
-    tokenizer = AutoTokenizer.from_pretrained(model_type)
+    #tokenizer = AutoTokenizer.from_pretrained(model_type)
     
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     #model = model.to(device)
@@ -94,8 +95,6 @@ def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight
     )
     
     # training_args.set_save(strategy="epoch", steps=1)
-
-    results = []
 
     trainer = Trainer(
         model=model,                         # the instantiated 🤗 Transformers model to be trained

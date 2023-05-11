@@ -21,7 +21,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model_dir",'-m')
 parser.add_argument("--dataset",'-d', default = "xformal")
 
-
 args = parser.parse_args()
 
 
