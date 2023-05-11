@@ -44,13 +44,18 @@ def compute_metrics(pred):
         'recall': recall
     }
 
+from mt5_utils import MT5ForSequenceClassification
+
 def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight_decay = 0.01, lr = 1e-5,save_folder = "/trained_models",
              save_eval_steps=500, language = "en_only"):
     """
     This contains everything that must be done to train our models
     """
     print("model_type",model_type)
-    model = AutoModelForSequenceClassification.from_pretrained(model_type, num_labels = 2)
+    if "mt5"in model_type:
+        model = MT5ForSequenceClassification.from_pretrained(model_type, num_labels = 2)
+    else:
+        model = AutoModelForSequenceClassification.from_pretrained(model_type, num_labels = 2)
     tokenizer = AutoTokenizer.from_pretrained(model_type)
     
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
