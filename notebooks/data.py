@@ -50,7 +50,7 @@ def unroll_to_two_lists(data_dict, languages):
 
     return formal_list, informal_list
 
-def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False):
+def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, test_only = False):
     
     
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -114,20 +114,28 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False):
         data_test_inform = data_test_inform[:100]
     
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    if test_only == True:
+        test_texts, test_labels = prep_dataset(data_test_form, data_test_inform)
+        print(test_texts[:10])
+        test_encodings = tokenizer(test_texts, truncation=True, padding=True, max_length=24)
+        test_dataset = Formal_informal(test_encodings, test_labels)
+        return test_dataset
+    else:
     
-    train_texts, train_labels = prep_dataset(data_train_form, data_train_inform)
-    val_texts, val_labels = prep_dataset(data_valid_form, data_valid_inform)
-    test_texts, test_labels = prep_dataset(data_test_form, data_test_inform)
-            
-    train_encodings = tokenizer(train_texts, truncation=True, padding=True, max_length=24)
-    val_encodings = tokenizer(val_texts, truncation=True, padding=True, max_length=24)
-    test_encodings = tokenizer(test_texts, truncation=True, padding=True, max_length=24)
-    
-    train_dataset = Formal_informal(train_encodings, train_labels)
-    val_dataset = Formal_informal(val_encodings, val_labels)
-    test_dataset = Formal_informal(test_encodings, test_labels)
-    
-    return (train_dataset, val_dataset, test_dataset)
+        train_texts, train_labels = prep_dataset(data_train_form, data_train_inform)
+        val_texts, val_labels = prep_dataset(data_valid_form, data_valid_inform)
+        test_texts, test_labels = prep_dataset(data_test_form, data_test_inform)
+
+        train_encodings = tokenizer(train_texts, truncation=True, padding=True, max_length=24)
+        val_encodings = tokenizer(val_texts, truncation=True, padding=True, max_length=24)
+        test_encodings = tokenizer(test_texts, truncation=True, padding=True, max_length=24)
+
+        train_dataset = Formal_informal(train_encodings, train_labels)
+        val_dataset = Formal_informal(val_encodings, val_labels)
+        test_dataset = Formal_informal(test_encodings, test_labels)
+
+        return (train_dataset, val_dataset, test_dataset)
 
 # def get_label(file_path):
 #     parts = tf.strings.split(file_path, os.path.sep)
