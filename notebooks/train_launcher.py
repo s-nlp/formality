@@ -30,7 +30,7 @@ steps_done = 0
 gpus_number = torch.cuda.device_count()
 
 for batch in [args.train_batch]:
-    for warmup_steps_frac in [0.25, 0.75]: #fraction from epoch
+    for warmup_steps_frac in [0.5]: #fraction from epoch
         
         warmup_steps = int((len(train_ds)/batch)*warmup_steps_frac/gpus_number)
         save_eval_steps = int((len(train_ds)/batch)*0.5/gpus_number)

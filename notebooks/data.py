@@ -94,13 +94,19 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
             data_test_inform.extend(data_test_inform_gyafc)
 
 
-        elif "only" in language:
-            only_lang = language.split("_")[0]
+        elif "only" in language or "all2" in language:
+
+            if "only" in language:
+                only_lang = language.split("_")[0]
+            elif "all2" in language:
+                only_lang = language[len("all2"):]
+
             print(f"Will be trained only on {only_lang}")
             data_train_form, data_train_inform = unroll_to_two_lists(train_data, [only_lang])
             data_valid_form, data_valid_inform = unroll_to_two_lists(validation_data, [only_lang])
 
             if only_lang == "en":
+                print("Test is uploaded directly from GYAFC")
                 path_formal = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/formal*')
                 path_inform = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/informal*')
                 data_test_form = data_read(path_formal.format('tune'))
@@ -115,6 +121,8 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
             data_valid_form, data_valid_inform = unroll_to_two_lists(validation_data, [lang for lang in list(train_data.keys()) if lang!= all_but_lang])
 
             if all_but_lang == "en":
+
+                print("Test is uploaded directly from GYAFC")
                 path_formal = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/formal*')
                 path_inform = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/informal*')
                 data_test_form = data_read(path_formal.format('tune'))
@@ -129,8 +137,6 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
         data_valid_inform = data_valid_inform[:100]
         data_test_form = data_test_form[:100]
         data_test_inform = data_test_inform[:100]
-    
-
 
     if test_only == True:
         test_texts, test_labels = prep_dataset(data_test_form, data_test_inform)
@@ -141,7 +147,7 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
         test_dataset = Formal_informal(test_encodings, test_labels)
         return test_dataset, test_labels
     else:
-    
+
         train_texts, train_labels = prep_dataset(data_train_form, data_train_inform)
         val_texts, val_labels = prep_dataset(data_valid_form, data_valid_inform)
         test_texts, test_labels = prep_dataset(data_test_form, data_test_inform)
