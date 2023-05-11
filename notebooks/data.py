@@ -50,7 +50,7 @@ def unroll_to_two_lists(data_dict, languages):
 
     return formal_list, informal_list
 
-def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, test_only = False):
+def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, test_only = False, get_raw_data = False):
     
     
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -114,7 +114,13 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
             data_train_form, data_train_inform = unroll_to_two_lists(train_data, [lang for lang in list(train_data.keys()) if lang!= all_but_lang])
             data_valid_form, data_valid_inform = unroll_to_two_lists(validation_data, [lang for lang in list(train_data.keys()) if lang!= all_but_lang])
 
-            data_test_form, data_test_inform = unroll_to_two_lists(test_data, [all_but_lang])
+            if all_but_lang == "en":
+                path_formal = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/formal*')
+                path_inform = os.path.join(dir_path, 'GYAFC_Corpus/*/{}/informal*')
+                data_test_form = data_read(path_formal.format('tune'))
+                data_test_inform = data_read(path_inform.format('tune'))
+            else:
+                data_test_form, data_test_inform = unroll_to_two_lists(test_data, [all_but_lang])
 
     if toy == True:
         data_train_form = data_train_form[:100]
@@ -124,11 +130,13 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
         data_test_form = data_test_form[:100]
         data_test_inform = data_test_inform[:100]
     
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
 
     if test_only == True:
         test_texts, test_labels = prep_dataset(data_test_form, data_test_inform)
         print(test_texts[:10])
+        
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
         test_encodings = tokenizer(test_texts, truncation=True, padding=True, max_length=24)
         test_dataset = Formal_informal(test_encodings, test_labels)
         return test_dataset, test_labels
@@ -138,15 +146,23 @@ def load_dataset(model_name, dataset_type="gyafc", language = None, toy=False, t
         val_texts, val_labels = prep_dataset(data_valid_form, data_valid_inform)
         test_texts, test_labels = prep_dataset(data_test_form, data_test_inform)
 
-        train_encodings = tokenizer(train_texts, truncation=True, padding=True, max_length=24)
-        val_encodings = tokenizer(val_texts, truncation=True, padding=True, max_length=24)
-        test_encodings = tokenizer(test_texts, truncation=True, padding=True, max_length=24)
+        if get_raw_data == True:
+            return {"train":{"text":train_texts, "labels":train_labels},
+                    "val":{"text":val_texts, "labels":val_labels},
+                    "test":{"text":test_texts, "labels":test_labels},}
 
-        train_dataset = Formal_informal(train_encodings, train_labels)
-        val_dataset = Formal_informal(val_encodings, val_labels)
-        test_dataset = Formal_informal(test_encodings, test_labels)
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-        return (train_dataset, val_dataset, test_dataset)
+            train_encodings = tokenizer(train_texts, truncation=True, padding=True, max_length=24)
+            val_encodings = tokenizer(val_texts, truncation=True, padding=True, max_length=24)
+            test_encodings = tokenizer(test_texts, truncation=True, padding=True, max_length=24)
+
+            train_dataset = Formal_informal(train_encodings, train_labels)
+            val_dataset = Formal_informal(val_encodings, val_labels)
+            test_dataset = Formal_informal(test_encodings, test_labels)
+
+            return (train_dataset, val_dataset, test_dataset)
 
 # def get_label(file_path):
 #     parts = tf.strings.split(file_path, os.path.sep)
