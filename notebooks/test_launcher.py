@@ -2,7 +2,7 @@ import sys
 sys.path.append("../")
 
 from data import load_dataset
-from torch.utils.data import Dataset, DataLoader
+from mt5_utils import MT5ForSequenceClassification
 import torch
 from transformers import (DebertaTokenizer,
                           DebertaForSequenceClassification,
@@ -11,8 +11,6 @@ from transformers import (DebertaTokenizer,
                           Trainer,TrainingArguments)
 import os
 import json
-from tqdm import tqdm
-import re
 
 import argparse
 
@@ -39,6 +37,8 @@ def get_model_type(model_name):
         return "bert-base-multilingual-cased"
     elif "bigscience_bloom-1b1" in model_name:
         return "bigscience/bloom-1b1"
+    elif "mt5-base" in model_name:
+        return "google/mt5-base"
     else:
         raise Exception ("Unhandled model type!!")
 
@@ -74,13 +74,16 @@ for model_folder in os.listdir(args.model_dir) :
         #print(os.listdir(model_folder_abs))
 
         if os.path.isdir(f"{model_folder_abs}/nli_model/")==True:
-            test_model = AutoModelForSequenceClassification.from_pretrained(f"{model_folder_abs}/nli_model/")
+            if "mt5" in model_folder:
+                test_model = MT5ForSequenceClassification.from_pretrained(f"{model_folder_abs}/nli_model/")
+            else:
+                test_model = AutoModelForSequenceClassification.from_pretrained(f"{model_folder_abs}/nli_model/")
             print("Model loaded")
         else:
             print("Not trained! Skipping ...")
             continue
         
-        training_args = TrainingArguments(per_device_eval_batch_size=64, output_dir = "./tmp_trainer/", dataloader_drop_last = False)
+        training_args = TrainingArguments(per_device_eval_batch_size=256, output_dir = "./tmp_trainer/", dataloader_drop_last = False)
         
         trainer = Trainer(model=test_model, args = training_args)
 

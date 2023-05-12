@@ -36,10 +36,11 @@ for batch in [args.train_batch]:
         save_eval_steps = int((len(train_ds)/batch)*0.5/gpus_number)
 
         for epochs in [5]: #10
-            for lr in [1e-5, 1e-6]:  # [1e-4, 1e-5, 5e-5, 1e-6]
+            for lr in [5e-5]:  # [1e-4, 1e-5, 5e-5, 1e-6]
 
                 steps_done += 1
                 #if steps_done <= 1: continue
+                if steps_done > 1: break
 
                 save_folder = f"./trained_models_{args.language}"
 

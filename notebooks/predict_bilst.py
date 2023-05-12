@@ -9,7 +9,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_dir",'-m')
-parser.add_argument('-dataset', default = "gyafc") #fr pt en it
+parser.add_argument('-dataset', default = "xformal") #fr pt en it
 parser.add_argument('-train_batch', default = 512, type=int)
 args = parser.parse_args()
 

@@ -108,7 +108,7 @@ def train_nli(datasets, model_type, batch=16, epochs=5, warmup_steps=200, weight
     trainer.train()
 
     trainer.save_model(f"{save_folder}/nli_model/")
-    tokenizer.save_pretrained(f"{save_folder}/nli_model/")    
+    #tokenizer.save_pretrained(f"{save_folder}/nli_model/")
     
     gc.collect()
     torch.cuda.empty_cache()
